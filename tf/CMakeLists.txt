@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.3)
 project(tf)
 
 find_package(catkin REQUIRED)
@@ -41,6 +41,9 @@ target_link_libraries(tf_change_notifier ${PROJECT_NAME})
 
 add_executable(tf_monitor src/tf_monitor.cpp)
 target_link_libraries(tf_monitor ${PROJECT_NAME})
+
+add_executable(tf_bundler src/tf_bundler.cpp)
+target_link_libraries(tf_bundler ${PROJECT_NAME})
 
 add_executable(static_transform_publisher src/static_transform_publisher.cpp)
 target_link_libraries(static_transform_publisher ${PROJECT_NAME})
