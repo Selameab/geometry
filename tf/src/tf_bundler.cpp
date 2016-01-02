@@ -35,10 +35,12 @@
 #include "tf/tf.h"
 #include "tf/transform_listener.h"
 #include <string>
+#include <algorithm>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include "std_msgs/String.h"
 #include "ros/ros.h"
+#include <tf/users.h>
 
 using namespace tf;
 using namespace ros;
@@ -53,7 +55,8 @@ public:
   
   ros::NodeHandle node_;
 
-  ros::Publisher tf_publisher = node_.advertise<std_msgs::String>("/tf_bundle", 1000);
+  ros::Publisher tf_publisher;
+  ros::Publisher users_publisher;
 
   ros::Subscriber subscriber_tf_, subscriber_tf_message_;
   std::vector<std::string> chain_;
@@ -129,7 +132,9 @@ public:
     framea_(framea), frameb_(frameb),
     using_specific_chain_(using_specific_chain)
   {
-    
+    tf_publisher = node_.advertise<std_msgs::String>("/tf_bundle", 1000);
+    users_publisher = node_.advertise<tf::users>("/users_bundle", 1000);
+
     if (using_specific_chain_)
     {
       cout << "Waiting for transform chain to become available between "<< framea_ << " and " << frameb_<< " " << flush;
@@ -218,6 +223,7 @@ public:
       std::map<std::string, std::vector<double> >::iterator it = delay_map.begin();
 
       stringstream buffer;
+      tf::users users;
 
       for ( ; it != delay_map.end() ; ++it)
       {
@@ -231,14 +237,27 @@ public:
             buffer << outputFrameInfo(it, frame_authority_map[it->first]);
           }
         }
-        else
-          buffer << outputFrameInfo(it, frame_authority_map[it->first]);
+        else{
+            std::size_t pos = it->first.find("user_");
+            if (pos != string::npos)
+            {
+              std::string temp = it->first.substr(pos);
+              temp = it->first.substr(pos, temp.find("/"));
+
+              // Avoid adding duplicate user ids
+              if (std::find(users.user_ids.begin(), users.user_ids.end(), temp) == users.user_ids.end()){
+                users.user_ids.push_back(temp);  
+              }              
+            }   
+            buffer << outputFrameInfo(it, frame_authority_map[it->first]);
+        }
       }        
 
-      // cout << buffer.str();
       std_msgs::String msg;
       msg.data = buffer.str();
       tf_publisher.publish(msg);
+
+      users_publisher.publish(users);
 
       std::cerr <<std::endl<< "All Broadcasters:" << std::endl;
       std::map<std::string, std::vector<double> >::iterator it1 = authority_map.begin();

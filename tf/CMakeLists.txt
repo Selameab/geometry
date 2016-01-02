@@ -15,6 +15,7 @@ include_directories(include)
 link_directories(${catkin_LIBRARY_DIRS})
 
 add_message_files(DIRECTORY msg FILES tfMessage.msg)
+add_message_files(DIRECTORY msg FILES users.msg)
 add_service_files(DIRECTORY srv FILES FrameGraph.srv)
 
 generate_messages(DEPENDENCIES geometry_msgs sensor_msgs std_msgs)
